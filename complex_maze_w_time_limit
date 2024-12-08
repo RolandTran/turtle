@@ -1,0 +1,129 @@
+import turtle
+from random import random
+import time
+import threading
+
+# Screen setup
+screen = turtle.Screen()
+screen.title("Maze Game")
+screen.bgcolor("white")
+screen.setup(width=900, height=900)
+
+# Create the maze drawer
+maze_drawer = turtle.Turtle()
+maze_drawer.speed(0)
+maze_drawer.penup()
+maze_drawer.hideturtle()
+
+# Player setup
+player = turtle.Turtle()
+player.shape("turtle")
+player.color("green")
+player.penup()
+player.goto(-250, 250)  # Start position
+
+# Finish marker
+finish = turtle.Turtle()
+finish.shape("square")
+finish.color("gold")
+finish.penup()
+finish.goto(250, -250)  # Finish position
+
+# Maze design
+walls = []  # Store maze wall coordinates for collision detection
+
+def line(x1, y1, x2, y2):
+    """Draw a line and add coordinates to walls list."""
+    maze_drawer.penup()
+    maze_drawer.goto(x1, y1)
+    maze_drawer.pendown()
+    maze_drawer.goto(x2, y2)
+    maze_drawer.penup()
+
+    # Add line segments to walls for collision detection
+    if x1 == x2:  # Vertical line
+        for y in range(min(y1, y2), max(y1, y2) + 1, 10):
+            walls.append((x1, y))
+    elif y1 == y2:  # Horizontal line
+        for x in range(min(x1, x2), max(x1, x2) + 1, 10):
+            walls.append((x, y1))
+
+def draw_maze():
+    """Draw a random maze."""
+    maze_drawer.color('black')
+    maze_drawer.width(5)
+    
+    for x in range(-200, 200, 40):
+        for y in range(-200, 200, 40):
+            if random() > 0.5:
+                line(x, y, x + 40, y + 40)
+            else:
+                line(x, y + 40, x + 40, y)
+
+draw_maze()
+
+# Player movement
+def move_up():
+    x, y = player.position()
+    if (x, y + 10) not in walls:
+        player.sety(y + 10)
+
+def move_down():
+    x, y = player.position()
+    if (x, y - 10) not in walls:
+        player.sety(y - 10)
+
+def move_left():
+    x, y = player.position()
+    if (x - 10, y) not in walls:
+        player.setx(x - 10)
+
+def move_right():
+    x, y = player.position()
+    if (x + 10, y) not in walls:
+        player.setx(x + 10)
+
+# Check for win condition
+def check_finish():
+    if player.distance(finish) < 20:
+        print("You win!")
+        global game_over
+        game_over = True
+        screen.bye()
+
+# Timer setup
+game_over = False
+
+def time_up():
+    global game_over
+    print("Time's up! You lose!")
+    game_over = True
+    screen.bye()
+
+def start_timer(duration):
+    """Start the countdown timer."""
+    start_time = time.time()
+    while not game_over:
+        elapsed = time.time() - start_time
+        remaining = duration - elapsed
+        if remaining <= 0:
+            time_up()
+            break
+        screen.title(f"Maze Game - Time Remaining: {int(remaining)} seconds")
+        time.sleep(1)
+
+# Start timer in a separate thread
+timer_thread = threading.Thread(target=start_timer, args=(15,))
+timer_thread.start()
+
+# Keyboard bindings
+screen.listen()
+screen.onkey(move_up, "Up")
+screen.onkey(move_down, "Down")
+screen.onkey(move_left, "Left")
+screen.onkey(move_right, "Right")
+
+# Main game loop
+while not game_over:
+    check_finish()
+    screen.update()
